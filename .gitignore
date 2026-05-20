@@ -1,0 +1,7 @@
+/.vscode/
+*.lnk
+desktop.ini
+Thumbs.db
+ehthumbs.db
+.DS_Store
+*.log
