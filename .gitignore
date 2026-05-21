@@ -5,3 +5,5 @@ Thumbs.db
 ehthumbs.db
 .DS_Store
 *.log
+
+/work/tool/[Dd]oxygen/html/
