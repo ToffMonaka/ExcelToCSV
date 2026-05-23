@@ -1,7 +1,7 @@
-@echo Java ExcelToCSV: 開始
+@echo ExcelToCSV: 開始
 
-java -Xms256M -Xmx256M -jar ..\bin\ExcelToCSV.jar
+java -Xms256M -Xmx256M -jar ..\bin\ExcelToCSV.jar work release UTF-8
 
-@echo Java ExcelToCSV: 終了
+@echo ExcelToCSV: 終了
 
 pause
