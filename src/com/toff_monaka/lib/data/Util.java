@@ -42,7 +42,7 @@ public class Util
             }
 
             var file_name = file.getName();
-            var file_name_dot_str_index = file_name.lastIndexOf(".");
+            var file_name_dot_str_index = file_name.lastIndexOf('.');
 
             if (file_name_dot_str_index < 0) {
                 continue;
