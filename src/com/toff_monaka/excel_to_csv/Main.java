@@ -9,15 +9,15 @@ package com.toff_monaka.excel_to_csv;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.usermodel.Sheet;
 
 
 /**
@@ -27,19 +27,26 @@ public class Main
 {
 	private Main(){}
 
+	private static String _commentPrefix = "_";
+	private static String _sheetName = "テーブル";
+	private static String _invalidColumnName = "invalid_flg";
+	private static String[] _invalidColumnValueArray = new String[] {"1", "1.0", ""};
+	private static String _lastColumnName = "invalid_flg";
+	private static DateTimeFormatter _dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.of("Asia/Tokyo"));
+
 	/**
 	 * @brief main関数
-	 * @param app_param_ary(application_parameter_array)
+	 * @param app_param_ary (application_parameter_array)
 	 */
 	public static void main(String[] app_param_ary)
 	{
-		System.out.println(com.toff_monaka.excel_to_csv.Util.PROJECT.NAME);
-		System.out.println(com.toff_monaka.excel_to_csv.Util.PROJECT.VERSION_NAME);
-		System.out.println(com.toff_monaka.excel_to_csv.Util.PROJECT.COMPANY_NAME);
+		System.out.println(Util.PROJECT.NAME);
+		System.out.println(Util.PROJECT.VERSION_NAME);
+		System.out.println(Util.PROJECT.COMPANY_NAME);
 		System.out.println();
 
 		if (app_param_ary.length != 4) {
-			System.out.println("Error: アプリケーションパラメーター数が異常です。: excel_dir_path csv_dir_path charset newline");
+			System.out.println("Error: アプリケーションパラメーター数が異常です。: excel_dir_path csv_dir_path charset_name newline_name");
 			
 			return;
 		}
@@ -78,28 +85,28 @@ public class Main
 			}
 		}
 
-		var charset = app_param_ary[2];
+		var charset_name = app_param_ary[2];
 
-		if (charset.isEmpty()) {
-			System.out.println("Error: charsetが空です。");
+		if (charset_name.isEmpty()) {
+			System.out.println("Error: charset_nameが空です。");
 			
 			return;
 		}
 
-		var newline = app_param_ary[3];
+		var newline_name = app_param_ary[3];
 		var newline_code = "";
 
-		if (newline.isEmpty()) {
-			System.out.println("Error: newlineが空です。");
+		if (newline_name.isEmpty()) {
+			System.out.println("Error: newline_nameが空です。");
 			
 			return;
 		} else {
-			if (newline.equals("CRLF")) {
+			if (newline_name.equals("CRLF")) {
 				newline_code = "\r\n";
-			} else if (newline.equals("LF")) {
+			} else if (newline_name.equals("LF")) {
 				newline_code = "\n";
 			} else {
-				System.out.println("Error: newlineが存在しない改行です。: " + newline);
+				System.out.println("Error: newline_nameが存在しない改行です。: " + newline_name);
 
 				return;
 			}
@@ -107,11 +114,11 @@ public class Main
 
 		System.out.println("excel_dir_path=" + excel_dir_path);
 		System.out.println("csv_dir_path=" + csv_dir_path);
-		System.out.println("charset=" + charset);
-		System.out.println("newline=" + newline);
+		System.out.println("charset_name=" + charset_name);
+		System.out.println("newline_name=" + newline_name);
 		System.out.println();
 
-		var excel_file_name_ary = com.toff_monaka.lib.data.Util.getFileNameArray(excel_dir_path, new String[] {"xls", "xlsx"});
+		var excel_file_name_ary = com.toff_monaka.tml.data.DataUtil.getFileNameArray(excel_dir_path, new String[] {"xls", "xlsx"});
 
 		if (excel_file_name_ary == null) {
 			System.out.println("Error: Excelファイル名配列の作成に失敗しました。");
@@ -119,15 +126,26 @@ public class Main
 			return;
 		}
 
-		var comment_prefix = "_";
-		var sheet_name = "テーブル";
-		var invalid_column_name = "invalid_flg";
-		var invalid_column_val_ary = new String[] {"1", "1.0", ""};
-		var last_column_name = invalid_column_name;
-		var date_formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.of("Asia/Tokyo"));
-
 		for (var excel_file_name : excel_file_name_ary) {
 			System.out.println("変換開始: " + excel_file_name);
+
+			{// メモリリフレッシュ
+				// 待機
+				try {
+					Thread.sleep(40L);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				
+				System.gc();
+				
+				// 待機
+				try {
+					Thread.sleep(40L);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
 
 			var convert_res = 0;
 
@@ -144,8 +162,8 @@ public class Main
 
 				System.out.println("テーブル名=" + tbl_name);
 
-				if (!comment_prefix.isEmpty()) {
-					if (tbl_name.indexOf(comment_prefix) == 0) {
+				if (!Main._commentPrefix.isEmpty()) {
+					if (tbl_name.indexOf(Main._commentPrefix) == 0) {
 						System.out.println("コメントテーブルです。");
 						
 						break;
@@ -157,10 +175,10 @@ public class Main
 				// 読み込み
 				try (var file_is = new FileInputStream(excel_dir_path + "/" + excel_file_name);
 					var workbook = WorkbookFactory.create(file_is)) {
-					var sheet = workbook.getSheet(sheet_name);
+					var sheet = workbook.getSheet(Main._sheetName);
 
 					if (sheet == null) {
-						System.out.println("Error: シートが存在しません。: " + sheet_name);
+						System.out.println("Error: シートが存在しません。: " + Main._sheetName);
 
 						convert_res = -1;
 
@@ -190,68 +208,120 @@ public class Main
 					System.out.println("行数=" + row_cnt);
 					System.out.println("列数=" + column_cnt);
 
-					var my_sheet =  new String[row_cnt][column_cnt];
+					var my_sheet = Main._getMySheet(row_cnt, column_cnt, sheet);
 
-					for (int row_i = 0; row_i < row_cnt; ++row_i) {
-						var row = sheet.getRow(row_i);
+					var all_comment_column_flg = true;
+				
+					for (int column_i = 0; column_i < column_cnt; ++column_i) {
+						var column_name = my_sheet[0][column_i];
 
-						for (int cell_i = 0; cell_i < column_cnt; ++cell_i) {
-							var val = "";
+						if (column_name.isEmpty()) {
+							System.out.println("Error: 列名が空です。");
 							
-							if (row != null) {
-								var cell = row.getCell(cell_i);
+							convert_res = -1;
+							
+							break;
+						}
+						
+						if (!Main._commentPrefix.isEmpty()) {
+							if (column_name.indexOf(Main._commentPrefix) != 0) {
+								all_comment_column_flg = false;
+							}
+						}
+					}
+					
+					if (convert_res < 0) {
+						break;
+					}
+					
+					if (all_comment_column_flg) {
+						System.out.println("全コメント列です。");
+				
+						break;
+					}
+
+					if (!Main._lastColumnName.isEmpty()) {
+						var column_name = my_sheet[0][column_cnt - 1];
+						
+						if ((column_name.isEmpty())
+						|| (!column_name.equals(Main._lastColumnName))) {
+							System.out.println("Error: 最期の列名が異常です。: " + column_name);
+							
+							convert_res = -1;
+							
+							break;
+						}
+					}
+
+					var row_add_flg = false;
+					
+					for (int row_i = 1; row_i < row_cnt; ++row_i) {
+						System.out.print("\r[" + row_i + "/" + (row_cnt - 1) + "]                    ");
+						
+						// 待機
+						if ((row_i % 200) == 0) {
+							try {
+								Thread.sleep(20L);
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+						}
+						
+						if (!Main._invalidColumnName.isEmpty()) {
+							var column_val = my_sheet[row_i][column_cnt - 1];
+							
+							var invalid_val_flg = false;
+							
+							for (int invalid_column_invalid_val_i = 0; invalid_column_invalid_val_i < Main._invalidColumnValueArray.length; ++invalid_column_invalid_val_i) {
+								if (column_val.equals(Main._invalidColumnValueArray[invalid_column_invalid_val_i])) {
+									invalid_val_flg = true;
 								
-								if (cell != null) {
-									switch (cell.getCellType()) {
-									case STRING: {
-										val = cell.getStringCellValue();
-
-										break;
-									}
-									case NUMERIC: {
-										if (DateUtil.isCellDateFormatted(cell)) {
-											val = date_formatter.format(cell.getDateCellValue().toInstant());
-										} else {
-											val = String.valueOf(cell.getNumericCellValue());
-
-											{// 末尾の｢.0｣を削除
-												int str_index = val.lastIndexOf(".0");
-												
-												if ((str_index >= 0) && (str_index == (val.length() - 2))) {
-													val = val.substring(0, str_index);
-												}
-											}
-										}
-
-										break;
-									}
-									case BOOLEAN: {
-										val = (cell.getBooleanCellValue()) ? "1" : "0";
-
-										break;
-									}
-									case FORMULA: {
-										val = String.valueOf(cell.getNumericCellValue());
-
-										{// 末尾の｢.0｣を削除
-											int str_index = val.lastIndexOf(".0");
-											
-											if ((str_index >= 0) && (str_index == (val.length() - 2))) {
-												val = val.substring(0, str_index);
-											}
-										}
-
-										break;
-									}
-									default: {
-										break;
-									}
-									}
+									break;
 								}
 							}
 							
-							my_sheet[row_i][cell_i] = val;
+							if (invalid_val_flg) {
+								continue;
+							}
 						}
+
+						if (row_add_flg) {
+							file_dat.append(newline_code);
+						}
+						
+						var column_add_flg = false;
+
+						for (int column_i = 0; column_i < column_cnt; ++column_i) {
+							var column_name = my_sheet[0][column_i];
+
+							if (!Main._commentPrefix.isEmpty()) {
+								if (column_name.indexOf(Main._commentPrefix) == 0) {
+									continue;
+								}
+							}
+							
+							var column_val = my_sheet[row_i][column_i];
+
+							if (column_add_flg) {
+								file_dat.append(",");
+							}
+							
+							column_val = column_val.replaceAll("\"", "\"\"");
+							
+							file_dat.append("\"" + column_val + "\"");
+							
+							column_add_flg = true;
+						}
+
+						row_add_flg = true;
+					}
+					
+					if (row_add_flg) {
+						file_dat.append(newline_code);
+					}
+
+					if (row_cnt > 1) {
+						System.out.println();
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -265,7 +335,7 @@ public class Main
 
 				// 書き込み
 				try (var file_os = new FileOutputStream(csv_dir_path + "/" + tbl_name + ".csv");
-					var osw = new OutputStreamWriter(file_os, charset);
+					var osw = new OutputStreamWriter(file_os, charset_name);
 					var bw = new BufferedWriter(osw)) {
 
 					bw.write(file_dat.toString());
@@ -288,26 +358,84 @@ public class Main
 
 			System.out.println("変換終了: " + excel_file_name);
 			System.out.println();
-
-			{// メモリリフレッシュ
-				// 待機
-				try {
-					Thread.sleep(40L);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				
-				System.gc();
-				
-				// 待機
-				try {
-					Thread.sleep(40L);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
 		}
 
 		return;
+	}
+
+	/**
+	 * @brief _getMySheet関数
+	 * @param row_cnt (row_count)
+	 * @param column_cnt (column_count)
+	 * @param sheet (sheet)
+     * @return my_sheet (my_sheet)
+	 */
+	private static String[][] _getMySheet(int row_cnt, int column_cnt, Sheet sheet)
+	{
+		var my_sheet =  new String[row_cnt][column_cnt];
+
+		for (int row_i = 0; row_i < row_cnt; ++row_i) {
+			var row = sheet.getRow(row_i);
+
+			for (int cell_i = 0; cell_i < column_cnt; ++cell_i) {
+				var val = "";
+				
+				if (row != null) {
+					var cell = row.getCell(cell_i);
+					
+					if (cell != null) {
+						switch (cell.getCellType()) {
+						case STRING: {
+							val = cell.getStringCellValue();
+
+							break;
+						}
+						case NUMERIC: {
+							if (DateUtil.isCellDateFormatted(cell)) {
+								val = Main._dateTimeFormatter.format(cell.getDateCellValue().toInstant());
+							} else {
+								val = String.valueOf(cell.getNumericCellValue());
+
+								{// 末尾の｢.0｣を削除
+									int str_index = val.lastIndexOf(".0");
+									
+									if ((str_index >= 0) && (str_index == (val.length() - 2))) {
+										val = val.substring(0, str_index);
+									}
+								}
+							}
+
+							break;
+						}
+						case BOOLEAN: {
+							val = (cell.getBooleanCellValue()) ? "1" : "0";
+
+							break;
+						}
+						case FORMULA: {
+							val = String.valueOf(cell.getNumericCellValue());
+
+							{// 末尾の｢.0｣を削除
+								int str_index = val.lastIndexOf(".0");
+								
+								if ((str_index >= 0) && (str_index == (val.length() - 2))) {
+									val = val.substring(0, str_index);
+								}
+							}
+
+							break;
+						}
+						default: {
+							break;
+						}
+						}
+					}
+				}
+				
+				my_sheet[row_i][cell_i] = val;
+			}
+		}
+
+		return (my_sheet);
 	}
 }

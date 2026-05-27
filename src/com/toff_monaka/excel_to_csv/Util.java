@@ -14,7 +14,7 @@ public class Util
 {
 	private Util(){}
 
-    private static Boolean _debugFlag = true;
+    private static Boolean _debugFlag = false;
 
     public static class PROJECT
     {
@@ -31,7 +31,7 @@ public class Util
      */
     public static Boolean getDebugFlag()
     {
-        return (com.toff_monaka.excel_to_csv.Util._debugFlag);
+        return (Util._debugFlag);
     }
     
     /**
@@ -42,7 +42,7 @@ public class Util
     {
         System.out.println("Warning: com.toff_monaka.excel_to_csv.Util.SetDebugFlag: " + debug_flg);
 
-        com.toff_monaka.excel_to_csv.Util._debugFlag = debug_flg;
+        Util._debugFlag = debug_flg;
 
         return;
     }
