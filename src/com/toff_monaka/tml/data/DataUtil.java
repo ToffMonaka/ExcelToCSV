@@ -3,12 +3,9 @@
  * @brief DataUtilファイル
  */
 
-
 package com.toff_monaka.tml.data;
 
-
 import java.io.File;
-
 
 /**
  * @brief DataUtilクラス

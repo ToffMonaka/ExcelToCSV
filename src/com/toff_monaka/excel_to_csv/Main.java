@@ -3,9 +3,7 @@
  * @brief Mainファイル
  */
 
-
 package com.toff_monaka.excel_to_csv;
-
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -19,7 +17,6 @@ import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.ss.usermodel.Sheet;
 
-
 /**
  * @brief Mainクラス
  */
@@ -27,12 +24,14 @@ public class Main
 {
 	private Main(){}
 
-	private static String _commentPrefix = "_";
-	private static String _sheetName = "テーブル";
-	private static String _invalidColumnName = "invalid_flg";
-	private static String[] _invalidColumnValueArray = new String[] {"1", "1.0", ""};
-	private static String _lastColumnName = "invalid_flg";
-	private static DateTimeFormatter _dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.of("Asia/Tokyo"));
+	public static final String[] EXCEL_FILE_EXTENSION_ARRAY = new String[] {"xls", "xlsx"};
+	public static final String CSV_FILE_EXTENSION = "csv";
+	public static final String COMMENT_PREFIX = "_";
+	public static final String SHEET_NAME = "テーブル";
+	public static final String INVALID_COLUMN_NAME = "invalid_flg";
+	public static final String[] INVALID_COLUMN_VALUE_ARRAY = new String[] {"1", "1.0", ""};
+	public static final String LAST_COLUMN_NAME = "invalid_flg";
+	public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.of("Asia/Tokyo"));
 
 	/**
 	 * @brief main関数
@@ -118,7 +117,7 @@ public class Main
 		System.out.println("newline_name=" + newline_name);
 		System.out.println();
 
-		var excel_file_name_ary = com.toff_monaka.tml.data.DataUtil.getFileNameArray(excel_dir_path, new String[] {"xls", "xlsx"});
+		var excel_file_name_ary = com.toff_monaka.tml.data.DataUtil.getFileNameArray(excel_dir_path, Main.EXCEL_FILE_EXTENSION_ARRAY);
 
 		if (excel_file_name_ary == null) {
 			System.out.println("Error: Excelファイル名配列の作成に失敗しました。");
@@ -162,8 +161,8 @@ public class Main
 
 				System.out.println("テーブル名=" + tbl_name);
 
-				if (!Main._commentPrefix.isEmpty()) {
-					if (tbl_name.indexOf(Main._commentPrefix) == 0) {
+				if (!Main.COMMENT_PREFIX.isEmpty()) {
+					if (tbl_name.indexOf(Main.COMMENT_PREFIX) == 0) {
 						System.out.println("コメントテーブルです。");
 						
 						break;
@@ -175,10 +174,10 @@ public class Main
 				// 読み込み
 				try (var file_is = new FileInputStream(excel_dir_path + "/" + excel_file_name);
 					var workbook = WorkbookFactory.create(file_is)) {
-					var sheet = workbook.getSheet(Main._sheetName);
+					var sheet = workbook.getSheet(Main.SHEET_NAME);
 
 					if (sheet == null) {
-						System.out.println("Error: シートが存在しません。: " + Main._sheetName);
+						System.out.println("Error: シートが存在しません。: " + Main.SHEET_NAME);
 
 						convert_res = -1;
 
@@ -223,8 +222,8 @@ public class Main
 							break;
 						}
 						
-						if (!Main._commentPrefix.isEmpty()) {
-							if (column_name.indexOf(Main._commentPrefix) != 0) {
+						if (!Main.COMMENT_PREFIX.isEmpty()) {
+							if (column_name.indexOf(Main.COMMENT_PREFIX) != 0) {
 								all_comment_column_flg = false;
 							}
 						}
@@ -240,12 +239,33 @@ public class Main
 						break;
 					}
 
-					if (!Main._lastColumnName.isEmpty()) {
+					var invalid_column_index = -1;
+
+					if (!Main.INVALID_COLUMN_NAME.isEmpty()) {
+						for (int column_i = 0; column_i < column_cnt; ++column_i) {
+							var column_name = my_sheet[0][column_i];
+
+							if (column_name.equals(Main.INVALID_COLUMN_NAME)) {
+								invalid_column_index = column_i;
+								
+								break;
+							}
+						}
+
+						if (invalid_column_index < 0) {
+							System.out.println("Error: 無効列名がありません。: " + Main.INVALID_COLUMN_NAME);
+							
+							convert_res = -1;
+							
+							break;
+						}
+					}
+
+					if (!Main.LAST_COLUMN_NAME.isEmpty()) {
 						var column_name = my_sheet[0][column_cnt - 1];
 						
-						if ((column_name.isEmpty())
-						|| (!column_name.equals(Main._lastColumnName))) {
-							System.out.println("Error: 最期の列名が異常です。: " + column_name);
+						if (!column_name.equals(Main.LAST_COLUMN_NAME)) {
+							System.out.println("Error: 最後の列名がありません。: " + Main.LAST_COLUMN_NAME);
 							
 							convert_res = -1;
 							
@@ -267,20 +287,20 @@ public class Main
 							}
 						}
 						
-						if (!Main._invalidColumnName.isEmpty()) {
-							var column_val = my_sheet[row_i][column_cnt - 1];
+						if (invalid_column_index >= 0) {
+							var column_val = my_sheet[row_i][invalid_column_index];
 							
-							var invalid_val_flg = false;
+							var invalid_column_val_flg = false;
 							
-							for (int invalid_column_invalid_val_i = 0; invalid_column_invalid_val_i < Main._invalidColumnValueArray.length; ++invalid_column_invalid_val_i) {
-								if (column_val.equals(Main._invalidColumnValueArray[invalid_column_invalid_val_i])) {
-									invalid_val_flg = true;
+							for (int invalid_column_val_i = 0; invalid_column_val_i < Main.INVALID_COLUMN_VALUE_ARRAY.length; ++invalid_column_val_i) {
+								if (column_val.equals(Main.INVALID_COLUMN_VALUE_ARRAY[invalid_column_val_i])) {
+									invalid_column_val_flg = true;
 								
 									break;
 								}
 							}
 							
-							if (invalid_val_flg) {
+							if (invalid_column_val_flg) {
 								continue;
 							}
 						}
@@ -294,8 +314,8 @@ public class Main
 						for (int column_i = 0; column_i < column_cnt; ++column_i) {
 							var column_name = my_sheet[0][column_i];
 
-							if (!Main._commentPrefix.isEmpty()) {
-								if (column_name.indexOf(Main._commentPrefix) == 0) {
+							if (!Main.COMMENT_PREFIX.isEmpty()) {
+								if (column_name.indexOf(Main.COMMENT_PREFIX) == 0) {
 									continue;
 								}
 							}
@@ -334,7 +354,7 @@ public class Main
 				}
 
 				// 書き込み
-				try (var file_os = new FileOutputStream(csv_dir_path + "/" + tbl_name + ".csv");
+				try (var file_os = new FileOutputStream(csv_dir_path + "/" + tbl_name + "." + Main.CSV_FILE_EXTENSION);
 					var osw = new OutputStreamWriter(file_os, charset_name);
 					var bw = new BufferedWriter(osw)) {
 
@@ -392,7 +412,7 @@ public class Main
 						}
 						case NUMERIC: {
 							if (DateUtil.isCellDateFormatted(cell)) {
-								val = Main._dateTimeFormatter.format(cell.getDateCellValue().toInstant());
+								val = Main.DATE_TIME_FORMATTER.format(cell.getDateCellValue().toInstant());
 							} else {
 								val = String.valueOf(cell.getNumericCellValue());
 

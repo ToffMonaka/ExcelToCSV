@@ -3,9 +3,7 @@
  * @brief Utilファイル
  */
 
-
 package com.toff_monaka.tml;
-
 
 /**
  * @brief Utilクラス

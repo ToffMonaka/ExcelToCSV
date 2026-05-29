@@ -3,9 +3,7 @@
  * @brief Utilファイル
  */
 
-
 package com.toff_monaka.excel_to_csv;
-
 
 /**
  * @brief Utilクラス
