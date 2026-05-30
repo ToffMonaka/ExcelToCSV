@@ -38,7 +38,7 @@ public class Util
      */
     public static void setDebugFlag(Boolean debug_flg)
     {
-        System.out.println("Warning: com.toff_monaka.lib.Util.SetDebugFlag: " + debug_flg);
+        System.out.println("Warning: com.toff_monaka.tml.Util.SetDebugFlag: " + debug_flg);
 
         Util._debugFlag = debug_flg;
 

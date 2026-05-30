@@ -186,7 +186,7 @@ public class Main
 
 					var row_cnt = sheet.getLastRowNum() - sheet.getFirstRowNum() + 1;
 
-					if (row_cnt <= 1) {
+					if (row_cnt <= 0) {
 						System.out.println("Error: 行数が異常です。: " + row_cnt);
 
 						convert_res = -1;
@@ -194,7 +194,17 @@ public class Main
 						break;
 					}
 
-					var column_cnt = sheet.getRow(0).getLastCellNum() - sheet.getRow(0).getFirstCellNum();
+					var column_name_row = sheet.getRow(0);
+
+					if (column_name_row == null) {
+						System.out.println("Error: 列名の行がありません。");
+
+						convert_res = -1;
+
+						break;
+					}
+
+					var column_cnt = column_name_row.getLastCellNum() - column_name_row.getFirstCellNum();
 					
 					if (column_cnt <= 0) {
 						System.out.println("Error: 列数が異常です。: " + column_cnt);
@@ -209,8 +219,6 @@ public class Main
 
 					var my_sheet = Main._getMySheet(row_cnt, column_cnt, sheet);
 
-					var all_comment_column_flg = true;
-				
 					for (int column_i = 0; column_i < column_cnt; ++column_i) {
 						var column_name = my_sheet[0][column_i];
 
@@ -221,21 +229,9 @@ public class Main
 							
 							break;
 						}
-						
-						if (!Main.COMMENT_PREFIX.isEmpty()) {
-							if (column_name.indexOf(Main.COMMENT_PREFIX) != 0) {
-								all_comment_column_flg = false;
-							}
-						}
 					}
 					
 					if (convert_res < 0) {
-						break;
-					}
-					
-					if (all_comment_column_flg) {
-						System.out.println("全コメント列です。");
-				
 						break;
 					}
 
@@ -273,8 +269,6 @@ public class Main
 						}
 					}
 
-					var row_add_flg = false;
-					
 					for (int row_i = 1; row_i < row_cnt; ++row_i) {
 						System.out.print("\r[" + row_i + "/" + (row_cnt - 1) + "]                    ");
 						
@@ -305,10 +299,6 @@ public class Main
 							}
 						}
 
-						if (row_add_flg) {
-							file_dat.append(newline_code);
-						}
-						
 						var column_add_flg = false;
 
 						for (int column_i = 0; column_i < column_cnt; ++column_i) {
@@ -333,11 +323,9 @@ public class Main
 							column_add_flg = true;
 						}
 
-						row_add_flg = true;
-					}
-					
-					if (row_add_flg) {
-						file_dat.append(newline_code);
+						if (column_add_flg) {
+							file_dat.append(newline_code);
+						}
 					}
 
 					if (row_cnt > 1) {
